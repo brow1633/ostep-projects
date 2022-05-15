@@ -2,32 +2,56 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <time.h>
 
 int main(int argc, char* argv[]) {
+#ifdef TIME
+	FILE* out = fopen("test.zip", "w");
+	clock_t begin = clock();
+#else
+	FILE* out = stdout;
+#endif
 	if(argc < 2) {
-		printf("Usage: %s [file]\n", argv[0]);
+		printf("wzip: file1 [file2 ...]\n");
 		exit(1);
 	}
 
-	FILE* fp = fopen(argv[1], "r");
+	int num_repeats = 0;
+	char previous_char;
+	int ch;
 
-	if(fp == NULL) {
-		printf("Could: cannot open file\n");
-	}
+	for(int i = 1; i < argc; i++) {
+		FILE* fp = fopen(argv[i], "r");
 
-	int num_repeats = 1;
-	char previous_char = '\0';
-	for(char ch = fgetc(fp); !feof(fp); ch = fgetc(fp)) {
-		if(ch == previous_char) {
-			num_repeats++;
-		} else {
-			fwrite(&num_repeats, 1, 4, stdout);
-			fputc(previous_char, stdout);
-			previous_char = ch;
-			num_repeats = 1;
+		if(fp == NULL) {
+			printf("wzip: cannot open file\n");
+			exit(1);
 		}
-		
+
+		if(i == 1) {
+			previous_char = fgetc(fp);
+		}
+
+		while((ch = fgetc(fp)) != EOF) {
+			num_repeats++;
+			if(ch != previous_char) {
+				fwrite(&num_repeats, sizeof(int), 1, out);
+				fputc(previous_char, out);
+				num_repeats = 0;
+				previous_char = ch;
+			} 
+		}
+		fclose(fp);
 	}
+
+	num_repeats++;
+	fwrite(&num_repeats, sizeof(int), 1, out);
+	fputc(previous_char, out);
+#ifdef TIME
+	clock_t end = clock();
+	printf("Time: %lf\n", (double)(end - begin) / CLOCKS_PER_SEC);
+	fclose(out);
+#endif
 
 	return EXIT_SUCCESS;
 }
