@@ -6,17 +6,17 @@
 
 int main(int argc, char* argv[]) {
 #ifdef TIME
-	FILE* out = fopen("test.zip", "w");
+	FILE* out_file = fopen("test.zip", "w");
 	clock_t begin = clock();
 #else
-	FILE* out = stdout;
+	FILE* out_file = stdout;
 #endif
 	if(argc < 2) {
 		printf("wzip: file1 [file2 ...]\n");
 		exit(1);
 	}
 
-	int num_repeats = 0;
+	int num_consecutive = 0;
 	char previous_char;
 	int ch;
 
@@ -33,24 +33,24 @@ int main(int argc, char* argv[]) {
 		}
 
 		while((ch = fgetc(fp)) != EOF) {
-			num_repeats++;
+			num_consecutive++;
 			if(ch != previous_char) {
-				fwrite(&num_repeats, sizeof(int), 1, out);
-				fputc(previous_char, out);
-				num_repeats = 0;
+				fwrite(&num_consecutive, sizeof(int), 1, out_file);
+				fputc(previous_char, out_file);
+				num_consecutive = 0;
 				previous_char = ch;
 			} 
 		}
 		fclose(fp);
 	}
 
-	num_repeats++;
-	fwrite(&num_repeats, sizeof(int), 1, out);
-	fputc(previous_char, out);
+	num_consecutive++;
+	fwrite(&num_consecutive, sizeof(int), 1, out_file);
+	fputc(previous_char, out_file);
 #ifdef TIME
 	clock_t end = clock();
 	printf("Time: %lf\n", (double)(end - begin) / CLOCKS_PER_SEC);
-	fclose(out);
+	fclose(out_file);
 #endif
 
 	return EXIT_SUCCESS;
